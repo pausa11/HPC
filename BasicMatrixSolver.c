@@ -65,21 +65,14 @@ int multiply_matrices(int** A, int rows_A, int cols_A,
     return 1;  // Success
 }
 
-int main() {
-    int rows, cols;
-    
-    printf("=== Matrix Multiplication Program ===\n");
-    
-    // Get dimensions for Matrix A
-    printf("Enter dimensions for the matrixs:\n");
-    printf("Number of rows: ");
-    scanf("%d", &rows);
-    printf("Number of columns: ");
-    scanf("%d", &cols);
-    
+ int main(int argc, char* argv[]) { // So, the SO doesn`t pass arg directly, it passes a count and an array of strings.
+
+    int rows = atoi(argv[1]);  // converts "4" → 4
+    int cols = atoi(argv[2]);  // converts "4" → 4
+
     // Allocate memory for all three matrices
     int** A = create_matrix(rows, cols);
-    int** B = create_matrix(rows, cols);
+    int** B = create_matrix(rows, cols); 
     int** C = create_matrix(rows, cols);  // Result matrix
     
     // Get input values
@@ -87,10 +80,9 @@ int main() {
     input_matrix(B, rows, cols, 'B');
    
   // Perform multiplication
-    printf("\nMultiplying matrices...\n");
     if (multiply_matrices(A, rows, cols, B, rows, cols, C)) {
         // Display result
-        printf("\nResult (Matrix C = A × B):\n");
+        //printf("\nResult (Matrix C = A × B):\n");
         print_matrix(C, rows, cols, 'C');
     }
     
