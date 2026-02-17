@@ -65,26 +65,19 @@ El proyecto incluye scripts para medir el **Speedup** y la **Eficiencia** de las
 
 ## Manualmente
 ```bash 
-```
 gcc BasicMatrixSolver.c -o output && ./output 4 4 
 ```
-```
-
 ## Correr es sh de testing
 
 Solo para para hacer el sh ejecutable, correr :
 ```bash 
-```
 chmod +x testing.sh
-```
 ```
 ```
 
 ```
 Una vez creado el ejecutable, de ahora en adelante solo se corre:
-
 ```bash 
-```
 ./testing.sh
 ```
 ```
