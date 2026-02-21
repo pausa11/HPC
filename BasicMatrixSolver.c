@@ -107,7 +107,7 @@ int main(int argc, char* argv[]) { // So, the SO doesn`t pass arg directly, it p
   btw, microseconds is divided by 1e6 to convert ir into a fraction second
   */
 
-  printf("%.6f",user_time);
+  printf("%.6f ",user_time);
   
   return 0;
 }
