@@ -1,5 +1,7 @@
 #include <stdio.h> //"Standar input&output"
 #include <stdlib.h> //For memory management & rand()
+#include <sys/resource.h> // Provides the getusage() fuction and the struct type, which holds resource usage static_assert
+#include <sys/time.h> //Provides the strcut timeval, needed for struct rusage
 
 // Function to allocate memory for a matrix (2D array)
 int** create_matrix(int rows, int cols) {
@@ -65,31 +67,47 @@ int multiply_matrices(int** A, int rows_A, int cols_A,
     return 1;  // Success
 }
 
- int main(int argc, char* argv[]) { // So, the SO doesn`t pass arg directly, it passes a count and an array of strings.
-
-    int rows = atoi(argv[1]);  // converts "4" → 4
-    int cols = atoi(argv[2]);  // converts "4" → 4
-
-    // Allocate memory for all three matrices
-    int** A = create_matrix(rows, cols);
-    int** B = create_matrix(rows, cols); 
-    int** C = create_matrix(rows, cols);  // Result matrix
+int main(int argc, char* argv[]) { // So, the SO doesn`t pass arg directly, it passes a count and an array of strings.
     
-    // Get input values
-    input_matrix(A, rows, cols, 'A');
-    input_matrix(B, rows, cols, 'B');
+  struct rusage start, end; //Here start will be a snapchot before the operation, end will be a snapchot after
+  getrusage(RUSAGE_SELF, &start); //&start is a pointer to the usage struct where the info will be saved
+  //RUSAGE_SELF is a flag to meassure current process itself
+
+  int rows = atoi(argv[1]);  // converts "4" → 4
+  int cols = atoi(argv[2]);  // converts "4" → 4
+
+  // Allocate memory for all three matrices
+  int** A = create_matrix(rows, cols);
+  int** B = create_matrix(rows, cols); 
+  int** C = create_matrix(rows, cols);  // Result matrix
+    
+  // Get input values
+  input_matrix(A, rows, cols, 'A');
+  input_matrix(B, rows, cols, 'B');
    
   // Perform multiplication
-    if (multiply_matrices(A, rows, cols, B, rows, cols, C)) {
-        // Display result
-        //printf("\nResult (Matrix C = A × B):\n");
-        print_matrix(C, rows, cols, 'C');
-    }
+  if (multiply_matrices(A, rows, cols, B, rows, cols, C)) {
+      // Display result
+      //printf("\nResult (Matrix C = A × B):\n");
+      //print_matrix(C, rows, cols, 'C');
+  }
     
-    // Clean up memory
-    free_matrix(A, rows);
-    free_matrix(B, rows);
-    free_matrix(C, rows);
-    
-    return 0;
+  // Clean up memory
+  free_matrix(A, rows);
+  free_matrix(B, rows);
+  free_matrix(C, rows);
+
+  getrusage(RUSAGE_SELF, &end); // Takes the second snapshot
+
+  double user_time = (end.ru_utime.tv_sec  - start.ru_utime.tv_sec) +
+                   (end.ru_utime.tv_usec - start.ru_utime.tv_usec) / 1e6;
+  /* Calculates the elpased user CPU time between two getusage() snapshots by combining two parts 
+    tv_sec → whole seconds
+    tv_usec → remaining microseconds (the fractional part, 0–999999)
+  btw, microseconds is divided by 1e6 to convert ir into a fraction second
+  */
+
+  printf("%.6f ",user_time);
+  
+  return 0;
 }

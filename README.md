@@ -1,83 +1,44 @@
-# Proyecto de Computación de Alto Rendimiento (HPC) en C
 
-Este repositorio contiene implementaciones de algoritmos y soluciones optimizadas para computación de alto rendimiento utilizando el lenguaje C. El objetivo principal es maximizar la eficiencia computacional y el aprovechamiento de recursos de hardware modernos.
+# HPC - Multiplicación de Matrices
 
-## 🚀 Tecnologías Utilizadas
+Programa en C que multiplica dos matrices cuadradas de enteros aleatorios (0–99) y mide el tiempo de CPU en modo usuario mediante `getrusage()`.
 
-- **Lenguaje C**: Utilizado por su bajo nivel y eficiencia en el manejo de memoria.
-- **OpenMP**: Para paralelismo de memoria compartida mediante directivas de compilador.
-- **MPI (Message Passing Interface)**: Para paralelismo de memoria distribuida en clusters.
-- **POSIX Threads (pthreads)**: Para un control granular del multi-threading.
-- **SIMD (Single Instruction, Multiple Data)**: Uso de extensiones como AVX2 o AVX-512 para paralelismo a nivel de datos.
-
-## 🛠 Técnicas de Optimización
-
-Se han aplicado diversas técnicas para reducir los cuellos de botella y mejorar el rendimiento:
-
-1.  **Paralelismo Multi-nivel**: Combinación de MPI para la comunicación entre nodos y OpenMP para el paralelismo interno en cada nodo.
-2.  **Optimización de Caché**:
-    - Técnicas de *Loop Tiling* (Bloqueo) para mejorar la localidad temporal y espacial.
-    - Acceso a memoria *stride-1* para maximizar la eficiencia del prefetcher.
-3.  **Vectorización**: Uso de intrínsecos y pragmas para que el compilador genere instrucciones vectoriales eficientes.
-4.  **Reducción de Overhead**: Minimización de las regiones críticas y uso de algoritmos *lock-free* donde es posible.
-5.  **Perfilamiento (Profiling)**: Uso de herramientas como `gprof`, `Valgrind` y `Intel VTune` para identificar puntos críticos del código.
-
-## 📦 Instalación y Compilación
-
-### Requisitos
-
-- Compilador GCC (versión 9+) o Intel OneAPI (icc/icx).
-- Implementación de MPI (OpenMPI o MPICH).
-- `make` para la automatización de la compilación.
-
-### Compilación
-
-Para compilar el proyecto utilizando el `Makefile` incluido:
+## Compilar y ejecutar manualmente
 
 ```bash
-make
+gcc BasicMatrixSolver.c -o output && ./output <filas> <columnas>
 ```
 
-### Ejecución
-
-Para ejecutar una versión con OpenMP (ajustando el número de hilos):
+Ejemplo con una matriz 4×4:
 
 ```bash
-export OMP_NUM_THREADS=4
-./build/hpc_app
+gcc BasicMatrixSolver.c -o output && ./output 4 4
 ```
 
-Para ejecutar con MPI:
+La salida es el tiempo de CPU del usuario en segundos (6 decimales).
 
-```bash
-mpirun -np 4 ./build/hpc_app
-```
+## Script de testing
 
-## 📊 Medición de Rendimiento
+`testing.sh` ejecuta el programa 10 veces para cada tamaño de matriz (10, 100, 200, 300, 400, 500) y guarda los tiempos en el archivo `OUTPUT_FILE`.
 
-El proyecto incluye scripts para medir el **Speedup** y la **Eficiencia** de las soluciones, permitiendo analizar la escalabilidad tanto fuerte (*strong scaling*) como débil (*weak scaling*).
+### Uso
 
----
-*Desarrollado para la exploración de arquitecturas avanzadas y computación científica.*
+1. Compilar el programa:
 
+   ```bash
+   gcc BasicMatrixSolver.c -o output
+   ```
 
-# Como compilar lo que hizo WalviZ
+2. Dar permisos de ejecución al script (solo la primera vez):
 
-## Manualmente
-```bash 
-gcc BasicMatrixSolver.c -o output && ./output 4 4 
-```
-## Correr es sh de testing
+   ```bash
+   chmod +x testing.sh
+   ```
 
-Solo para para hacer el sh ejecutable, correr :
-```bash 
-chmod +x testing.sh
-```
-```
+3. Ejecutar el script:
 
-```
-Una vez creado el ejecutable, de ahora en adelante solo se corre:
-```bash 
-./testing.sh
-```
-```
+   ```bash
+   ./testing.sh
+   ```
+
+Los resultados se escriben en `OUTPUT_FILE`.
