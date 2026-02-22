@@ -2,7 +2,7 @@
 
 OUTPUT_FILE=testing.doc
 # Clear the output file before starting (so we don't append to old results)
->OUTPUT_FILE
+>$OUTPUT_FILE
 
 for j in {1..10}; do
   # Inner loop: runs ./output for each matrix size
@@ -14,4 +14,4 @@ for j in {1..10}; do
 
 done
 
-echo "Listo xd"
+echo "Listo! Los resultados se han guardado en $OUTPUT_FILE"
