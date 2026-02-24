@@ -1,11 +1,16 @@
 #!/bin/bash
 
-# Find the first unused filename in the format testing_N.doc
+# Identify device and ensure stats directory exists
+DEVICE_NAME=$(hostname)
+STATS_DIR="stats/$DEVICE_NAME"
+mkdir -p "$STATS_DIR"
+
+# Find the first unused filename in the format testing_N.doc within the device folder
 COUNT=1
-while [[ -f "testing_$COUNT.doc" ]]; do
+while [[ -f "$STATS_DIR/testing_$COUNT.doc" ]]; do
   ((COUNT++))
 done
-OUTPUT_FILE="testing_$COUNT.doc"
+OUTPUT_FILE="$STATS_DIR/testing_$COUNT.doc"
 
 for j in {1..10}; do
   # Inner loop: runs ./output for each matrix size
