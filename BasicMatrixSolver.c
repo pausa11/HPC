@@ -1,35 +1,62 @@
-#include <stdio.h> //"Standar input&output"
-#include <stdlib.h> //For memory management & rand()
-#include <sys/resource.h> // Provides the getusage() fuction and the struct type, which holds resource usage static_assert
-#include <sys/time.h> //Provides the strcut timeval, needed for struct rusage
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/resource.h>
+#include <sys/time.h>
+#include <pthread.h>
+
+#define NUM_THREADS 4
+
+// --- Thread argument struct ---
+// Each thread needs to know which rows to compute, and where the matrices are
+typedef struct {
+    int start_row;  // First row this thread is responsible for
+    int end_row;    // One past the last row (exclusive upper bound)
+    int cols_A;     // = cols of A = rows of B (needed for the dot product loop)
+    int cols_B;     // = cols of B = cols of C
+    int** A;
+    int** B;
+    int** C;
+} ThreadArgs;
+
+// --- Thread worker function ---
+// Each thread computes C[i][j] for i in [start_row, end_row)
+void* multiply_rows(void* arg) {
+    ThreadArgs* t = (ThreadArgs*)arg;
+
+    for (int i = t->start_row; i < t->end_row; i++) {
+        for (int j = 0; j < t->cols_B; j++) {
+            t->C[i][j] = 0;
+            for (int k = 0; k < t->cols_A; k++) {
+                t->C[i][j] += t->A[i][k] * t->B[k][j];
+            }
+        }
+    }
+
+    return NULL;
+}
 
 // Function to allocate memory for a matrix (2D array)
 int** create_matrix(int rows, int cols) {
-    // Allocate array of pointers (one for each row)
     int** matrix = (int**)malloc(rows * sizeof(int*));
-    
-    // For each row, allocate space for the columns
     for (int i = 0; i < rows; i++) {
         matrix[i] = (int*)malloc(cols * sizeof(int));
     }
-    
     return matrix;
 }
 
 // Function to free the memory used by a matrix
 void free_matrix(int** matrix, int rows) {
     for (int i = 0; i < rows; i++) {
-        free(matrix[i]);  // Free each row
+        free(matrix[i]);
     }
-    free(matrix);  // Free the array of pointers
+    free(matrix);
 }
 
-// Function to fill a matrix with values from user input
+// Function to fill a matrix with random values
 void input_matrix(int** matrix, int rows, int cols, char name) {
-    
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; j++) {
-            matrix[i][j]= rand() % 100;
+            matrix[i][j] = rand() % 100;
         }
     }
 }
@@ -37,77 +64,74 @@ void input_matrix(int** matrix, int rows, int cols, char name) {
 // Function to print a matrix
 void print_matrix(int** matrix, int rows, int cols, char name) {
     printf("\nMatrix %c (%dx%d):\n", name, rows, cols);
-    
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; j++) {
-            printf("%d ", matrix[i][j]);  // Print with 2 decimal places
+            printf("%d ", matrix[i][j]);
         }
         printf("\n");
     }
 }
 
-// Function to multiply two matrices
-// Returns 1 if successful, 0 if dimensions don't match
-int multiply_matrices(int** A, int rows_A, int cols_A,
-                    int** B, int rows_B, int cols_B,
-                    int** C) {
-   
-    for (int i = 0; i < rows_A; i++) {      // Outer loop iterate through each row of A
-        for (int j = 0; j < cols_B; j++) {  // Middle loop iterate through each column of B 
-            
-            C[i][j] = 0;  // Initialize the result element to 0
-            
-            // Calculate the dot product of row i of A and column j of B
-            for (int k = 0; k < cols_A; k++) {
-                C[i][j] += A[i][k] * B[k][j];
-            }
-        }
+// --- Threaded matrix multiplication ---
+// Spawns NUM_THREADS threads, each handling a contiguous chunk of rows of C
+void multiply_matrices_threaded(int** A, int rows_A, int cols_A,
+                                int** B, int cols_B,
+                                int** C) {
+    pthread_t threads[NUM_THREADS];
+    ThreadArgs args[NUM_THREADS];
+
+    // Calculate how many rows each thread gets
+    // Using integer division; the last thread absorbs any remainder
+    int rows_per_thread = rows_A / NUM_THREADS;
+
+    for (int t = 0; t < NUM_THREADS; t++) {
+        args[t].start_row = t * rows_per_thread;
+        // Last thread takes all remaining rows (handles rows_A % NUM_THREADS remainder)
+        args[t].end_row   = (t == NUM_THREADS - 1) ? rows_A : (t + 1) * rows_per_thread;
+        args[t].cols_A    = cols_A;
+        args[t].cols_B    = cols_B;
+        args[t].A         = A;
+        args[t].B         = B;
+        args[t].C         = C;
+
+        pthread_create(&threads[t], NULL, multiply_rows, &args[t]);
     }
-    
-    return 1;  // Success
+
+    // Wait for all threads to finish before returning
+    for (int t = 0; t < NUM_THREADS; t++) {
+        pthread_join(threads[t], NULL);
+    }
 }
 
-int main(int argc, char* argv[]) { // So, the SO doesn`t pass arg directly, it passes a count and an array of strings.
-    
-  struct rusage start, end; //Here start will be a snapchot before the operation, end will be a snapchot after
-  getrusage(RUSAGE_SELF, &start); //&start is a pointer to the usage struct where the info will be saved
-  //RUSAGE_SELF is a flag to meassure current process itself
+int main(int argc, char* argv[]) {
 
-  int rows = atoi(argv[1]);  // converts "4" → 4
-  int cols = atoi(argv[2]);  // converts "4" → 4
+    struct rusage start, end;
+    getrusage(RUSAGE_SELF, &start);
 
-  // Allocate memory for all three matrices
-  int** A = create_matrix(rows, cols);
-  int** B = create_matrix(rows, cols); 
-  int** C = create_matrix(rows, cols);  // Result matrix
-    
-  // Get input values
-  input_matrix(A, rows, cols, 'A');
-  input_matrix(B, rows, cols, 'B');
-   
-  // Perform multiplication
-  if (multiply_matrices(A, rows, cols, B, rows, cols, C)) {
-      // Display result
-      //printf("\nResult (Matrix C = A × B):\n");
-      //print_matrix(C, rows, cols, 'C');
-  }
-    
-  // Clean up memory
-  free_matrix(A, rows);
-  free_matrix(B, rows);
-  free_matrix(C, rows);
+    int rows = atoi(argv[1]);
+    int cols = atoi(argv[2]);
 
-  getrusage(RUSAGE_SELF, &end); // Takes the second snapshot
+    int** A = create_matrix(rows, cols);
+    int** B = create_matrix(rows, cols);
+    int** C = create_matrix(rows, cols);
 
-  double user_time = (end.ru_utime.tv_sec  - start.ru_utime.tv_sec) +
-                   (end.ru_utime.tv_usec - start.ru_utime.tv_usec) / 1e6;
-  /* Calculates the elpased user CPU time between two getusage() snapshots by combining two parts 
-    tv_sec → whole seconds
-    tv_usec → remaining microseconds (the fractional part, 0–999999)
-  btw, microseconds is divided by 1e6 to convert ir into a fraction second
-  */
+    input_matrix(A, rows, cols, 'A');
+    input_matrix(B, rows, cols, 'B');
 
-  printf("%.6f ",user_time);
-  
-  return 0;
+    // Perform threaded multiplication
+    multiply_matrices_threaded(A, rows, cols, B, cols, C);
+
+    // print_matrix(C, rows, cols, 'C');
+
+    free_matrix(A, rows);
+    free_matrix(B, rows);
+    free_matrix(C, rows);
+
+    getrusage(RUSAGE_SELF, &end);
+    double user_time = (end.ru_utime.tv_sec  - start.ru_utime.tv_sec) +
+                       (end.ru_utime.tv_usec - start.ru_utime.tv_usec) / 1e6;
+
+    printf("%.6f\n", user_time);
+
+    return 0;
 }
