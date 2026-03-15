@@ -67,14 +67,47 @@ int multiply_matrices(int** A, int rows_A, int cols_A,
     return 1;  // Success
 }
 
+void test_3x3() { // This fuction allows me to test if the current implementation does multiplication of a specific matrix correctly
+    // Known input matrices
+    int a[3][3] = { {1, 2, 3},
+                    {4, 5, 6},
+                    {7, 8, 9} };
+
+    int b[3][3] = { {9, 8, 7},
+                    {6, 5, 4},
+                    {3, 2, 1} };
+
+    // Build int** wrappers so create/free/multiply functions work as-is
+    int** A = create_matrix(3, 3);
+    int** B = create_matrix(3, 3);
+    int** C = create_matrix(3,3);
+
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            A[i][j] = a[i][j];
+            B[i][j] = b[i][j];
+        }
+    }
+
+    multiply_matrices(A, 3, 3, B, 3, 3, C);
+
+    print_matrix(C, 3, 3, 'C');
+
+    free_matrix(A, 3);
+    free_matrix(B, 3);
+    free_matrix(C,3);
+}
+
 int main(int argc, char* argv[]) { // So, the SO doesn`t pass arg directly, it passes a count and an array of strings.
-    
+  
+  //test_3x3(); //to test if the mulitplication is done correctly
+
   struct rusage start, end; //Here start will be a snapchot before the operation, end will be a snapchot after
   getrusage(RUSAGE_SELF, &start); //&start is a pointer to the usage struct where the info will be saved
   //RUSAGE_SELF is a flag to meassure current process itself
 
   int rows = atoi(argv[1]);  // converts "4" → 4
-  int cols = atoi(argv[2]);  // converts "4" → 4
+  int cols = rows;
 
   // Allocate memory for all three matrices
   int** A = create_matrix(rows, cols);

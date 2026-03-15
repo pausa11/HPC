@@ -2,7 +2,7 @@
 
 # Identify device and ensure stats directory exists
 DEVICE_NAME=$(hostname)
-STATS_DIR="../stats/$DEVICE_NAME"
+STATS_DIR="./stats/$DEVICE_NAME"
 mkdir -p "$STATS_DIR"
 
 # Find the first unused filename in the format testing_Threads_N.csv within the device folder
@@ -17,12 +17,11 @@ mkdir -p ../output
 
 for j in {1..10}; do
   # Inner loop: runs ./output for each matrix size
-  for i in 100 200 400; do 
-    ../output/secuential $i $i >>"$OUTPUT_FILE"
+  for i in 100 200 400; do
+    ./output/secuential $i >>"$OUTPUT_FILE"
   done
 
   echo "" >>"$OUTPUT_FILE" # Add a space after each i loop
 done
 
 echo "Listo! Los resultados se han guardado en $OUTPUT_FILE"
-

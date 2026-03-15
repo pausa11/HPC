@@ -1,44 +1,79 @@
-
 # HPC - Multiplicación de Matrices
 
 Programa en C que multiplica dos matrices cuadradas de enteros aleatorios (0–99) y mide el tiempo de CPU en modo usuario mediante `getrusage()`.
 
-## Compilar y ejecutar manualmente
+## Estructura del proyecto
+
+```
+src/
+├── SecuentialMatrixSolver.c
+├── MemoryMatrixSolver.c
+├── ThreadsMatrixSolver.c
+└── MultiprocessingMatrixSolver.c
+output/
+scripts/
+└── RunAll.sh
+```
+
+## Compilar
+
+### Secuencial
+```bash
+gcc src/SecuentialMatrixSolver.c -o output/secuential
+```
+
+### Memory
+```bash
+gcc src/MemoryMatrixSolver.c -O3 -o output/memory
+```
+
+### Threads
+```bash
+gcc src/ThreadsMatrixSolver.c -o output/threads -lpthread
+```
+
+### Multiprocessing
+```bash
+gcc src/MultiprocessingMatrixSolver.c -o output/multiprocessing
+```
+
+## Ejecutar manualmente
 
 ```bash
-gcc BasicMatrixSolver.c -o output && ./output <filas> <columnas>
+./output/<variante> <filas> <columnas>
 ```
 
 Ejemplo con una matriz 4×4:
 
 ```bash
-gcc BasicMatrixSolver.c -o output && ./output 4 4
+./output/secuential 4 4
 ```
 
 La salida es el tiempo de CPU del usuario en segundos (6 decimales).
 
 ## Script de testing
 
-`testing.sh` ejecuta el programa 10 veces para cada tamaño de matriz (10, 100, 200, 300, 400, 500) y guarda los tiempos en el archivo `OUTPUT_FILE`.
+`scripts/RunAll.sh` ejecuta todos los programas para cada tamaño de matriz y guarda los tiempos en sus respectivos archivos de salida.
 
 ### Uso
 
-1. Compilar el programa:
-
-   ```bash
-   gcc BasicMatrixSolver.c -o output
-   ```
+1. Compilar todos los programas (ver sección **Compilar** arriba).
 
 2. Dar permisos de ejecución al script (solo la primera vez):
 
    ```bash
-   chmod +x testing.sh
+   chmod +x scripts/RunAll.sh
    ```
 
 3. Ejecutar el script:
 
    ```bash
-   ./testing.sh
+   ./scripts/RunAll.sh
    ```
 
-Los resultados se escriben en `OUTPUT_FILE`.
+## Utilidades
+
+### Ver los threads del proceso en Linux
+```bash
+top -H -p $(pgrep output)
+```
