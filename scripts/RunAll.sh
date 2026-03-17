@@ -83,8 +83,8 @@ echo "Secuential testing in process ..."
 
 for j in $(seq 1 10); do
   for i in "${sizes[@]}"; do
-    key="secuential,${i},run${j}"
-    run_safe "$key" "$SECUENTIAL_FLAG_FILE" "$ROOT_DIR/output/secuential_flag" "$i"
+    key="secuentialFlags,${i},run${j}"
+    run_safe "$key" "$SECUENTIAL_FLAG_FILE" "$ROOT_DIR/output/secuentialFlags" "$i"
   done
   echo "" >> "$SECUENTIAL_FLAG_FILE"
 done
