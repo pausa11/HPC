@@ -22,8 +22,8 @@ fi
 mkdir -p "$ROOT_DIR/output"
 mkdir -p "$STATS_DIR"
 
-sizes=(500 1000 2000 3000 5000 10000 15000 20000)
-num_proccesses=(2 4)
+sizes=(500 1000 1300 1600 2000 2300 2600 3000 3300 3600 4000)
+num_proccesses=(2 4 8 16)
 
 SECUENTIAL_FILE="$STATS_DIR/secuential.csv"
 MEMORY_FILE="$STATS_DIR/memory.csv"
