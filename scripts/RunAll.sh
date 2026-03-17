@@ -26,6 +26,7 @@ sizes=(500 1000 1300 1600 2000 2300 2600 3000 3300 3600 4000)
 num_proccesses=(2 4 8 16)
 
 SECUENTIAL_FILE="$STATS_DIR/secuential.csv"
+SECUENTIAL_FLAG_FILE="$STATS_DIR/secuential_flag.csv"
 MEMORY_FILE="$STATS_DIR/memory.csv"
 THREAD_FILE="$STATS_DIR/threads"
 MULTIPROCESSING_FILE="$STATS_DIR/mutiprocessing"
@@ -75,6 +76,17 @@ for j in $(seq 1 10); do
     run_safe "$key" "$SECUENTIAL_FILE" "$ROOT_DIR/output/secuential" "$i"
   done
   echo "" >> "$SECUENTIAL_FILE"
+done
+
+# ─── SECUENTIAL CON FLAG ──────────────────────────────────────────────────────────────
+echo "Secuential testing in process ..."
+
+for j in $(seq 1 10); do
+  for i in "${sizes[@]}"; do
+    key="secuential,${i},run${j}"
+    run_safe "$key" "$SECUENTIAL_FLAG_FILE" "$ROOT_DIR/output/secuential_flag" "$i"
+  done
+  echo "" >> "$SECUENTIAL_FLAG_FILE"
 done
 
 # ─── MEMORY ──────────────────────────────────────────────────────────────────
