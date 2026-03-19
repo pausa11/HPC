@@ -1,7 +1,6 @@
 #include <stdio.h> //"Standar input&output"
 #include <stdlib.h> //For memory management & rand()
-#include <sys/resource.h> // Provides the getusage() fuction and the struct type, which holds resource usage static_assert
-#include <sys/time.h> //Provides the strcut timeval, needed for struct rusage
+#include <time.h> // Provides clock_gettime() for wall-clock measurement
 
 // Function to allocate memory for a matrix (2D array)
 int** create_matrix(int rows, int cols) {
@@ -102,9 +101,8 @@ int main(int argc, char* argv[]) { // So, the SO doesn`t pass arg directly, it p
   
   //test_3x3(); //to test if the mulitplication is done correctly
 
-  struct rusage start, end; //Here start will be a snapchot before the operation, end will be a snapchot after
-  getrusage(RUSAGE_SELF, &start); //&start is a pointer to the usage struct where the info will be saved
-  //RUSAGE_SELF is a flag to meassure current process itself
+  struct timespec start, end; // Wall-clock snapshots
+  clock_gettime(CLOCK_MONOTONIC, &start);
 
   int rows = atoi(argv[1]);  // converts "4" → 4
   int cols = rows;
@@ -130,17 +128,12 @@ int main(int argc, char* argv[]) { // So, the SO doesn`t pass arg directly, it p
   free_matrix(B, rows);
   free_matrix(C, rows);
 
-  getrusage(RUSAGE_SELF, &end); // Takes the second snapshot
+  clock_gettime(CLOCK_MONOTONIC, &end);
 
-  double user_time = (end.ru_utime.tv_sec  - start.ru_utime.tv_sec) +
-                   (end.ru_utime.tv_usec - start.ru_utime.tv_usec) / 1e6;
-  /* Calculates the elpased user CPU time between two getusage() snapshots by combining two parts 
-    tv_sec → whole seconds
-    tv_usec → remaining microseconds (the fractional part, 0–999999)
-  btw, microseconds is divided by 1e6 to convert ir into a fraction second
-  */
+  double elapsed = (end.tv_sec  - start.tv_sec) +
+                   (end.tv_nsec - start.tv_nsec) / 1e9;
 
-  printf("%.6f,",user_time);
+  printf("%.6f,", elapsed);
   
   return 0;
 }

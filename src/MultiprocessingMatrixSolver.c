@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/resource.h>
-#include <sys/time.h>
+#include <time.h> // Provides clock_gettime() for wall-clock measurement
 #include <unistd.h>
 #include <sys/wait.h>
 #include <sys/mman.h>
@@ -122,8 +121,8 @@ int main(int argc, char* argv[]) {
 
     // test_3x3();
 
-    struct rusage start, end;
-    getrusage(RUSAGE_SELF, &start);
+    struct timespec start, end; // Wall-clock snapshots
+    clock_gettime(CLOCK_MONOTONIC, &start);
 
     int rows         = atoi(argv[1]);
     int num_processes = atoi(argv[2]);
@@ -156,20 +155,12 @@ int main(int argc, char* argv[]) {
     free(C);
     munmap(C_data, rows * cols * sizeof(int));
 
-    getrusage(RUSAGE_SELF, &end);
+    clock_gettime(CLOCK_MONOTONIC, &end);
 
-    // FIX 3: use RUSAGE_CHILDREN to capture CPU time spent in child processes.
-    // RUSAGE_SELF only measures the parent (which is mostly idle while waiting),
-    // causing the forked version to appear artificially faster than the threaded one.
-    struct rusage children_end;
-    getrusage(RUSAGE_CHILDREN, &children_end);
+    double elapsed = (end.tv_sec  - start.tv_sec) +
+                     (end.tv_nsec - start.tv_nsec) / 1e9;
 
-    double user_time = (end.ru_utime.tv_sec         - start.ru_utime.tv_sec) +
-                       (end.ru_utime.tv_usec        - start.ru_utime.tv_usec) / 1e6 +
-                        children_end.ru_utime.tv_sec +
-                        children_end.ru_utime.tv_usec / 1e6;
-
-    printf("%.6f,", user_time);
+    printf("%.6f,", elapsed);
 
     return 0;
 }

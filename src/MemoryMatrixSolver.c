@@ -1,8 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/resource.h>
-#include <sys/time.h>
-#include <pthread.h>
+#include <time.h> // Provides clock_gettime() for wall-clock measurement
 
 
 // Function to allocate memory for a matrix (2D array)
@@ -99,8 +97,8 @@ int main(int argc, char* argv[]) {
     
     //test_3x3();
 
-    struct rusage start, end;
-    getrusage(RUSAGE_SELF, &start);
+    struct timespec start, end; // Wall-clock snapshots
+    clock_gettime(CLOCK_MONOTONIC, &start);
 
     int rows = atoi(argv[1]);
     int cols = rows;
@@ -121,11 +119,12 @@ int main(int argc, char* argv[]) {
     free_matrix(B, rows);
     free_matrix(C, rows);
 
-    getrusage(RUSAGE_SELF, &end);
-    double user_time = (end.ru_utime.tv_sec  - start.ru_utime.tv_sec) +
-                       (end.ru_utime.tv_usec - start.ru_utime.tv_usec) / 1e6;
+    clock_gettime(CLOCK_MONOTONIC, &end);
 
-    printf("%.6f,", user_time);
+    double elapsed = (end.tv_sec  - start.tv_sec) +
+                     (end.tv_nsec - start.tv_nsec) / 1e9;
+
+    printf("%.6f,", elapsed);
 
     return 0;
 }
