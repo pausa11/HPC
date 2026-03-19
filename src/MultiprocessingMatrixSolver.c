@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/resource.h>
-#include <sys/time.h>
+#include <time.h>
 #include <unistd.h>
 #include <sys/wait.h>
 #include <sys/mman.h>
@@ -25,7 +24,6 @@ void free_matrix(int** matrix, int rows) {
     free(matrix);
 }
 
-// FIX: removed unused 'name' parameter
 void input_matrix(int** matrix, int rows, int cols) {
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; j++) {
@@ -48,7 +46,6 @@ void print_matrix(int** matrix, int rows, int cols, char name) {
 void multiply_matrices_forked(int** A, int rows_A, int cols_A,
                                int** B, int cols_B,
                                int** C, int num_processes) {
-    // FIX 1: cap processes to number of rows to avoid empty/redundant children
     if (num_processes > rows_A) num_processes = rows_A;
 
     int rows_per_proc = rows_A / num_processes;
@@ -57,7 +54,6 @@ void multiply_matrices_forked(int** A, int rows_A, int cols_A,
         int start_row = p * rows_per_proc;
         int end_row   = (p == num_processes - 1) ? rows_A : (p + 1) * rows_per_proc;
 
-        // FIX 2: check fork() return value
         pid_t pid = fork();
         if (pid < 0) { perror("fork failed"); exit(1); }
 
@@ -73,7 +69,6 @@ void multiply_matrices_forked(int** A, int rows_A, int cols_A,
             }
             exit(0);
         }
-        // Parent continues to spawn the next child immediately
     }
 
     for (int p = 0; p < num_processes; p++) {
@@ -90,7 +85,6 @@ void test_3x3() {
     int** A = create_matrix(3, 3);
     int** B = create_matrix(3, 3);
 
-    // FIX 2: check mmap return value
     int* C_data = mmap(NULL,
                        rows * cols * sizeof(int),
                        PROT_READ | PROT_WRITE,
@@ -108,7 +102,6 @@ void test_3x3() {
             B[i][j] = b[i][j];
         }
 
-    // 4 processes for a 3-row matrix: safely capped to 3 by the fix
     multiply_matrices_forked(A, 3, 3, B, 3, C, 4);
     print_matrix(C, 3, 3, 'C');
 
@@ -122,17 +115,16 @@ int main(int argc, char* argv[]) {
 
     // test_3x3();
 
-    struct rusage start, end;
-    getrusage(RUSAGE_SELF, &start);
+    struct timespec start, end;
+    clock_gettime(CLOCK_MONOTONIC, &start);
 
-    int rows         = atoi(argv[1]);
+    int rows          = atoi(argv[1]);
     int num_processes = atoi(argv[2]);
-    int cols         = rows;
+    int cols          = rows;
 
     int** A = create_matrix(rows, cols);
     int** B = create_matrix(rows, cols);
 
-    // FIX 2: check mmap return value
     int* C_data = mmap(NULL,
                        rows * cols * sizeof(int),
                        PROT_READ | PROT_WRITE,
@@ -156,20 +148,10 @@ int main(int argc, char* argv[]) {
     free(C);
     munmap(C_data, rows * cols * sizeof(int));
 
-    getrusage(RUSAGE_SELF, &end);
-
-    // FIX 3: use RUSAGE_CHILDREN to capture CPU time spent in child processes.
-    // RUSAGE_SELF only measures the parent (which is mostly idle while waiting),
-    // causing the forked version to appear artificially faster than the threaded one.
-    struct rusage children_end;
-    getrusage(RUSAGE_CHILDREN, &children_end);
-
-    double user_time = (end.ru_utime.tv_sec         - start.ru_utime.tv_sec) +
-                       (end.ru_utime.tv_usec        - start.ru_utime.tv_usec) / 1e6 +
-                        children_end.ru_utime.tv_sec +
-                        children_end.ru_utime.tv_usec / 1e6;
-
-    printf("%.6f,", user_time);
+    clock_gettime(CLOCK_MONOTONIC, &end);
+    double elapsed = (end.tv_sec  - start.tv_sec) +
+                     (end.tv_nsec - start.tv_nsec) / 1e9;
+    printf("%.6f,", elapsed);
 
     return 0;
 }

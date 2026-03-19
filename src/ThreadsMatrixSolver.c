@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/resource.h>
-#include <sys/time.h>
+#include <time.h>
 #include <pthread.h>
 
 // --- Thread argument struct ---
@@ -50,7 +49,6 @@ void free_matrix(int** matrix, int rows) {
     free(matrix);
 }
 
-// FIX: removed unused 'name' parameter
 void input_matrix(int** matrix, int rows, int cols) {
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; j++) {
@@ -73,10 +71,8 @@ void print_matrix(int** matrix, int rows, int cols, char name) {
 void multiply_matrices_threaded(int** A, int rows_A, int cols_A,
                                 int** B, int cols_B,
                                 int** C, int num_threads) {
-    // FIX 1: cap threads to number of rows to avoid empty/redundant threads
     if (num_threads > rows_A) num_threads = rows_A;
 
-    // FIX 2: heap-allocate instead of stack VLAs to avoid potential stack overflow
     pthread_t*  threads = malloc(num_threads * sizeof(pthread_t));
     ThreadArgs* args    = malloc(num_threads * sizeof(ThreadArgs));
     if (!threads || !args) { perror("malloc failed (thread arrays)"); exit(1); }
@@ -92,7 +88,6 @@ void multiply_matrices_threaded(int** A, int rows_A, int cols_A,
         args[t].B         = B;
         args[t].C         = C;
 
-        // FIX 3: check pthread_create return value
         int rc = pthread_create(&threads[t], NULL, multiply_rows, &args[t]);
         if (rc != 0) { fprintf(stderr, "pthread_create failed: %d\n", rc); exit(1); }
     }
@@ -119,7 +114,6 @@ void test_3x3() {
             B[i][j] = b[i][j];
         }
 
-    // 4 threads for a 3-row matrix: safely capped to 3 by the fix
     multiply_matrices_threaded(A, 3, 3, B, 3, C, 4);
     print_matrix(C, 3, 3, 'C');
 
@@ -132,8 +126,8 @@ int main(int argc, char* argv[]) {
 
     // test_3x3();
 
-    struct rusage start, end;
-    getrusage(RUSAGE_SELF, &start);
+    struct timespec start, end;
+    clock_gettime(CLOCK_MONOTONIC, &start);
 
     int rows        = atoi(argv[1]);
     int num_threads = atoi(argv[2]);
@@ -154,10 +148,10 @@ int main(int argc, char* argv[]) {
     free_matrix(B, rows);
     free_matrix(C, rows);
 
-    getrusage(RUSAGE_SELF, &end);
-    double user_time = (end.ru_utime.tv_sec  - start.ru_utime.tv_sec) +
-                       (end.ru_utime.tv_usec - start.ru_utime.tv_usec) / 1e6;
-    printf("%.6f,", user_time);
+    clock_gettime(CLOCK_MONOTONIC, &end);
+    double elapsed = (end.tv_sec  - start.tv_sec) +
+                     (end.tv_nsec - start.tv_nsec) / 1e9;
+    printf("%.6f,", elapsed);
 
     return 0;
 }
