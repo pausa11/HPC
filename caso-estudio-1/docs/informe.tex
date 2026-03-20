@@ -90,7 +90,7 @@ El speedup representa la ganancia en rendimiento de la versión paralela respect
 
 \[ S_p = \frac{T^*(n)}{T_p(n)} \]
 
-donde $T^*(n)$ es el tiempo de ejecución secuencial y $T_p(n)$ el tiempo con $p$ trabajadores. El speedup ideal es lineal ($S_p = p$), pero en la práctica se ve limitado por porciones secuenciales (Ley de Amdahl) y por el overhead de sincronización.
+donde $T^*(n)$ es el tiempo de ejecución secuencial y $T_p(n)$ el tiempo con $p$ trabajadores. El speedup ideal es lineal ($S_p = p$), pero en la práctica se ve limitado por porciones secuenciales (Ley de Amdahl \cite{amdahl}) y por el overhead de sincronización.
 
 % ─────────────────────────────────────────────────────────────────────────────
 \section{Marco Contextual}
@@ -103,7 +103,7 @@ Las pruebas se realizaron sobre el siguiente hardware:
     \item \textbf{Equipo:} Apple Mac Mini (2024)
     \item \textbf{Procesador:} Apple M4 --- 10 núcleos (4 de rendimiento + 6 de eficiencia)
     \item \textbf{GPU integrada:} 10 núcleos
-    \item \textbf{Memoria:} 16 GB RAM unificada LPDDR5X (banda ancha $\approx$120 GB/s)
+    \item \textbf{Memoria:} 16 GB RAM unificada LPDDR5X (banda ancha $\approx$120 GB/s) \cite{apple_m4}
     \item \textbf{Almacenamiento:} 512 GB SSD NVMe
     \item \textbf{Sistema operativo:} macOS Sequoia 15.x (Darwin 25.x)
     \item \textbf{Compilador:} Apple Clang 16 (LLVM)
@@ -236,9 +236,8 @@ A continuación se presentan los tiempos promedio de ejecución (en segundos, so
 \textbf{Pr} & \textbf{0.2204} & \textbf{1.8328} & \textbf{3.7118} & \textbf{6.9286} & \textbf{16.6276} & \textbf{21.4683} & \textbf{36.1733} & \textbf{59.6649} & \textbf{74.3326} & \textbf{221.2359} & \textbf{304.7103} \\
 \hline
 \end{tabular}
-\label{tab:secuencial}
-
 \caption{Resultados de la ejecución secuencial.}
+\label{tab:secuencial}
 \end{table}
 
 \subsection{Secuencial con flag}
@@ -268,14 +267,13 @@ A continuación se presentan los tiempos promedio de ejecución (en segundos, so
 \textbf{Speedup} & \textbf{2.7014} & \textbf{2.2622} & \textbf{2.6004} & \textbf{2.6591} & \textbf{1.7665} & \textbf{2.5200} & \textbf{1.9521} & \textbf{1.7912} & \textbf{2.4758} & \textbf{1.4221} & \textbf{1.4169} \\
 \hline
 \end{tabular}
-\label{tab:secuencial_flag}
-
 \caption{Resultados de la ejecución secuencial con flag.}
+\label{tab:secuencial_flag}
 \end{table}
 
 %% TABLE 1: MEMORY
 
-\subsection{Secuencial con flag}
+\subsection{Optimización de caché (Transpuesta)}
 
 \begin{table}[H]
 \centering
@@ -303,13 +301,13 @@ A continuación se presentan los tiempos promedio de ejecución (en segundos, so
 \textbf{Speedup} & \textbf{1.4523} & \textbf{1.5652} & \textbf{1.4539} & \textbf{1.4574} & \textbf{1.7938} & \textbf{1.5237} & \textbf{1.7782} & \textbf{1.9122} & \textbf{1.7909} & \textbf{4.1170} & \textbf{4.1255} \\
 \hline
 \end{tabular}
-\label{tab:memoria}
 \caption{Resultados de la ejecución con optimización de caché (transposición de $B$).}
+\label{tab:memoria}
 \end{table}
 
 %% TABLE 2: MULTIPROCESSING 2
 
-\subsection{Secuencial con flag}
+\subsection{Multiprocesamiento --- 2 Procesos}
 
 \begin{table}[H]
 \centering
@@ -336,13 +334,13 @@ A continuación se presentan los tiempos promedio de ejecución (en segundos, so
 \textbf{Speedup} & \textbf{1.8780} & \textbf{1.9576} & \textbf{1.8818} & \textbf{1.7308} & \textbf{1.9481} & \textbf{1.6755} & \textbf{1.5703} & \textbf{1.6034} & \textbf{1.6696} & \textbf{1.9524} & \textbf{1.9532} \\
 \hline
 \end{tabular}
-\label{tab:mp2}
 \caption{Resultados de la ejecución con multiprocesamiento de 2 procesos.}
+\label{tab:mp2}
 \end{table}
 
 %% TABLE 3: MULTIPROCESSING 4
 
-\subsection{Secuencial con flag}
+\subsection{Multiprocesamiento --- 4 Procesos}
 
 \begin{table}[H]
 \centering
@@ -369,13 +367,13 @@ A continuación se presentan los tiempos promedio de ejecución (en segundos, so
 \textbf{Speedup} & \textbf{3.6118} & \textbf{3.7744} & \textbf{3.7014} & \textbf{3.6465} & \textbf{3.6406} & \textbf{3.1541} & \textbf{2.2176} & \textbf{2.1649} & \textbf{3.0382} & \textbf{2.8134} & \textbf{2.7641} \\
 \hline
 \end{tabular}
-\label{tab:mp4}
 \caption{Resultados de la ejecución con multiprocesamiento de 4 procesos.}
+\label{tab:mp4}
 \end{table}
 
 %% TABLE 4: MULTIPROCESSING 8
 
-\subsection{Secuencial con flag}
+\subsection{Multiprocesamiento --- 8 Procesos}
 
 \begin{table}[H]
 \centering
@@ -402,13 +400,13 @@ A continuación se presentan los tiempos promedio de ejecución (en segundos, so
 \textbf{Speedup} & \textbf{4.5537} & \textbf{4.9754} & \textbf{4.2651} & \textbf{4.2346} & \textbf{4.4892} & \textbf{3.8350} & \textbf{3.5918} & \textbf{3.5869} & \textbf{4.0455} & \textbf{4.0224} & \textbf{3.9651} \\
 \hline
 \end{tabular}
-\label{tab:mp8}
 \caption{Resultados de la ejecución con multiprocesamiento de 8 procesos.}
+\label{tab:mp8}
 \end{table}
 
 %% TABLE 5: MULTIPROCESSING 16
 
-\subsection{Secuencial con flag}
+\subsection{Multiprocesamiento --- 16 Procesos}
 
 \begin{table}[H]
 \centering
@@ -435,13 +433,13 @@ A continuación se presentan los tiempos promedio de ejecución (en segundos, so
 \textbf{Speedup} & \textbf{4.5822} & \textbf{5.1888} & \textbf{4.2788} & \textbf{4.2572} & \textbf{4.6228} & \textbf{3.7977} & \textbf{3.6444} & \textbf{3.6259} & \textbf{3.9016} & \textbf{3.9413} & \textbf{3.9288} \\
 \hline
 \end{tabular}
-\label{tab:mp16}
 \caption{Resultados de la ejecución con multiprocesamiento de 16 procesos.}
+\label{tab:mp16}
 \end{table}
 
 %% TABLE 6: THREADS 2
 
-\subsection{Secuencial con flag}
+\subsection{Hilos POSIX --- 2 Hilos}
 
 \begin{table}[H]
 \centering
@@ -468,13 +466,13 @@ A continuación se presentan los tiempos promedio de ejecución (en segundos, so
 \textbf{Speedup} & \textbf{1.6061} & \textbf{1.7163} & \textbf{1.5738} & \textbf{1.5605} & \textbf{1.7264} & \textbf{1.4747} & \textbf{1.3914} & \textbf{1.4361} & \textbf{1.4582} & \textbf{1.7692} & \textbf{1.7605} \\
 \hline
 \end{tabular}
-\label{tab:t2}
 \caption{Resultados de la ejecución con 2 hilos POSIX (pthread).}
+\label{tab:t2}
 \end{table}
 
 %% TABLE 7: THREADS 4
 
-\subsection{Secuencial con flag}
+\subsection{Hilos POSIX --- 4 Hilos}
 
 \begin{table}[H]
 \centering
@@ -501,13 +499,13 @@ A continuación se presentan los tiempos promedio de ejecución (en segundos, so
 \textbf{Speedup} & \textbf{3.0782} & \textbf{3.3144} & \textbf{3.0545} & \textbf{3.0778} & \textbf{3.2198} & \textbf{2.6920} & \textbf{2.0333} & \textbf{2.1322} & \textbf{2.7878} & \textbf{2.7052} & \textbf{2.6739} \\
 \hline
 \end{tabular}
-\label{tab:t4}
 \caption{Resultados de la ejecución con 4 hilos POSIX (pthread).}
+\label{tab:t4}
 \end{table}
 
 %% TABLE 8: THREADS 8
 
-\subsection{Secuencial con flag}
+\subsection{Hilos POSIX --- 8 Hilos}
 
 \begin{table}[H]
 \centering
@@ -534,13 +532,13 @@ A continuación se presentan los tiempos promedio de ejecución (en segundos, so
 \textbf{Speedup} & \textbf{4.0589} & \textbf{4.3464} & \textbf{3.5793} & \textbf{3.6014} & \textbf{3.9378} & \textbf{3.3853} & \textbf{3.3425} & \textbf{3.4357} & \textbf{3.5638} & \textbf{3.8923} & \textbf{3.8321} \\
 \hline
 \end{tabular}
-\label{tab:t8}
 \caption{Resultados de la ejecución con 8 hilos POSIX (pthread).}
+\label{tab:t8}
 \end{table}
 
 %% TABLE 9: THREADS 16
 
-\subsection{Secuencial con flag}
+\subsection{Hilos POSIX --- 16 Hilos}
 
 \begin{table}[H]
 \centering
@@ -567,8 +565,8 @@ A continuación se presentan los tiempos promedio de ejecución (en segundos, so
 \textbf{Speedup} & \textbf{4.2965} & \textbf{4.6139} & \textbf{3.6295} & \textbf{3.6264} & \textbf{4.0712} & \textbf{3.3498} & \textbf{3.3481} & \textbf{3.3638} & \textbf{3.5090} & \textbf{3.7735} & \textbf{3.7884} \\
 \hline
 \end{tabular}
-\label{tab:t16}
 \caption{Resultados de la ejecución con 16 hilos POSIX (pthread).}
+\label{tab:t16}
 \end{table}
 
 % --- Graphs ---
@@ -648,7 +646,7 @@ Significativamente, pasar de 8 a 16 hilos apenas mejora el speedup (de $\sim 3.9
 
 \subsection{Paralelismo con procesos}
 
-Los procesos con \texttt{fork} muestran speedups ligeramente superiores a los hilos en algunas configuraciones (especialmente con 8 y 16 trabajadores para matrices grandes), lo que puede explicarse porque el mecanismo \texttt{RUSAGE\_SELF + RUSAGE\_CHILDREN} contabiliza el tiempo de CPU agregado de todos los procesos, mientras que \texttt{getrusage(RUSAGE\_SELF)} en los hilos puede estar midiendo el tiempo de CPU del proceso completo (suma de todos los hilos). En cualquier caso, las diferencias son pequeñas y ambas estrategias convergen en eficiencia a medida que crece la dimensión de la matriz.
+Los procesos con \texttt{fork} muestran speedups ligeramente superiores a los hilos en algunas configuraciones (especialmente con 8 y 16 trabajadores para matrices grandes). Dado que ambas implementaciones miden tiempo de pared con \texttt{clock\_gettime(CLOCK\_MONOTONIC)}, la diferencia refleja el overhead distinto de cada mecanismo: \texttt{fork()} con memoria compartida vía \texttt{mmap} incurre en mayor costo de creación pero elimina la contención de sincronización dentro del proceso, mientras que los hilos \texttt{pthread} comparten el espacio de memoria pero están sujetos a posible contención en el planificador. En cualquier caso, las diferencias son pequeñas y ambas estrategias convergen en eficiencia a medida que crece la dimensión de la matriz.
 
 % ─────────────────────────────────────────────────────────────────────────────
 \section{Conclusiones}
