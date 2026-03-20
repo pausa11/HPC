@@ -572,14 +572,8 @@ A continuación se presentan los tiempos promedio de ejecución (en segundos, so
 % --- Graphs ---
 \section{Gráficas comparativas}
 
-\begin{figure}[H]
-\centering
-\includegraphics[width=\textwidth]{charts/tiempo_ejecucion.png}
-\caption{Tiempo de ejecución en función de la dimensión de la matriz — todas las variantes.}
-\label{fig:tiempo}
-\end{figure}
-
-El crecimiento cúbico del algoritmo secuencial base es evidente; las versiones paralelas y optimizadas comprimen significativamente esta curva. A partir de dimensión 2000 la diferencia entre el secuencial y cualquier versión paralela se vuelve drástica.
+% ── Gráfica 1: variantes secuenciales ────────────────────────────────────────
+\subsection{Variantes secuenciales}
 
 \begin{figure}[H]
 \centering
@@ -590,32 +584,45 @@ El crecimiento cúbico del algoritmo secuencial base es evidente; las versiones 
 
 Aislando las tres variantes secuenciales se aprecia con mayor claridad el impacto de cada optimización. La bandera \texttt{-O2} domina para matrices pequeñas, pero la versión con memoria transpuesta la supera a partir de dimensión $\approx 2300$, cuando la penalización por fallos de caché del acceso columnar empieza a ser el cuello de botella.
 
-\begin{figure}[H]
-\centering
-\includegraphics[width=\textwidth]{charts/speedup.png}
-\caption{Speedup en función de la dimensión de la matriz.}
-\label{fig:speedup}
-\end{figure}
-
-El speedup de los métodos paralelos respecto al secuencial base muestra que el salto de 8 a 16 workers es notablemente menor que el de 4 a 8, evidenciando el límite impuesto por los núcleos de eficiencia (E-cores) del M4 que no aportan el mismo rendimiento que los P-cores en cargas de cómputo intensivo.
+% ── Gráfica 2: speedup hilos ─────────────────────────────────────────────────
+\subsection{Speedup de hilos POSIX}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\textwidth]{charts/eficiencia_paralela.png}
-\caption{Eficiencia paralela $E = S_p/p$ en función de la dimensión de la matriz.}
-\label{fig:eficiencia}
+\includegraphics[width=\textwidth]{charts/speedup_hilos.png}
+\caption{Speedup en función de la dimensión de la matriz para 2, 4, 8 y 16 hilos POSIX (\texttt{pthread}).}
+\label{fig:speedup_hilos}
 \end{figure}
 
-La eficiencia paralela ($E = S_p / p$) revela cuánto del speedup ideal se aprovecha realmente. Con 2 workers ronda el 80--90\%; con 16 cae al 25--32\%. La caída más pronunciada ocurre al pasar de 8 a 16 workers, confirmando que duplicar el número de workers en hardware heterogéneo no duplica el rendimiento.
+El speedup crece con el número de hilos hasta 8, pero el salto de 8 a 16 hilos es notablemente menor que el de 4 a 8. Esto evidencia el límite impuesto por la arquitectura heterogénea del M4 (4 P-cores + 6 E-cores): los E-cores aportan menor rendimiento en cómputo intensivo, de modo que al usar 16 hilos el trabajo queda desbalanceado y el speedup real converge al de los P-cores disponibles.
+
+% ── Gráfica 3: speedup procesos ──────────────────────────────────────────────
+\subsection{Speedup de multiprocesamiento}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\textwidth]{charts/hilos_vs_procesos.png}
-\caption{Speedup comparativo entre hilos y procesos para cada número de workers.}
-\label{fig:hvsp}
+\includegraphics[width=\textwidth]{charts/speedup_procesos.png}
+\caption{Speedup en función de la dimensión de la matriz para 2, 4, 8 y 16 procesos (\texttt{fork} + \texttt{mmap}).}
+\label{fig:speedup_procesos}
 \end{figure}
 
-Comparando directamente hilos y procesos al mismo número de workers, para 2 y 4 los procesos muestran speedups ligeramente superiores; para 8 y 16 ambas estrategias convergen. El mecanismo de \texttt{fork()} con \texttt{mmap} parece incurrir en menos overhead relativo que \texttt{pthread} para pocos workers, pero la diferencia es pequeña y se diluye con la carga de trabajo.
+El comportamiento de los procesos es análogo al de los hilos: el speedup escala bien hasta 8 workers y se estanca al pasar a 16. Los procesos muestran speedups ligeramente superiores a los hilos en varias configuraciones, posiblemente por menor contención en el planificador al no compartir espacio de memoria.
+
+% ── Gráfica 4: 6 curvas — mejores variantes ──────────────────────────────────
+\subsection{Comparación de las 6 mejores variantes}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{charts/speedup_6curvas.png}
+\caption{Speedup de las 6 mejores variantes: \texttt{-O2}, transposición de memoria, los 2 mejores
+         números de hilos y los 2 mejores números de procesos.}
+\label{fig:speedup_6curvas}
+\end{figure}
+
+Esta gráfica permite comparar directamente las estrategias de optimización más efectivas. Para matrices grandes ($N \geq 3600$) la transposición de $B$ alcanza speedups similares a los de 8--16 workers paralelos, sin overhead de sincronización. La bandera \texttt{-O2} lidera en dimensiones pequeñas pero cae por debajo de todas las demás a partir de $N = 2600$. Las dos configuraciones de hilos y las dos de procesos convergen en comportamiento, confirmando que el límite real del sistema es la arquitectura del chip y no el mecanismo de paralelismo elegido.
+
+% ── Gráfica 5: heatmap ───────────────────────────────────────────────────────
+\subsection{Heatmap de speedup}
 
 \begin{figure}[H]
 \centering

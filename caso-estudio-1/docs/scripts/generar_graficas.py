@@ -173,4 +173,75 @@ fig.tight_layout()
 fig.savefig(f'{OUT_DIR}/heatmap_speedup.png', dpi=150)
 plt.close()
 
-print(f"6 gráficas generadas en '{OUT_DIR}/'")
+# ── Plot 7: Speedup — solo hilos (4 curvas) ──────────────────────────────────
+fig, ax = plt.subplots(figsize=(11, 6))
+
+colors_t = plt.cm.Blues(np.linspace(0.45, 0.9, 4))
+for i, p in enumerate(WORKERS):
+    sp = avg_seq / avgs_threads[p]
+    ax.plot(SIZES, sp.values, label=f'{p} Hilos',
+            marker='o', color=colors_t[i], linewidth=2)
+
+ax.set_xlabel('Dimensión de la matriz cuadrada (N×N)', fontsize=12)
+ax.set_ylabel('Speedup', fontsize=12)
+ax.set_title('Speedup — Hilos POSIX (2, 4, 8, 16 hilos)', fontsize=13)
+ax.legend(fontsize=10)
+ax.grid(True, alpha=0.4)
+fig.tight_layout()
+fig.savefig(f'{OUT_DIR}/speedup_hilos.png', dpi=150)
+plt.close()
+
+# ── Plot 8: Speedup — solo procesos (4 curvas) ────────────────────────────────
+fig, ax = plt.subplots(figsize=(11, 6))
+
+colors_mp = plt.cm.Oranges(np.linspace(0.45, 0.9, 4))
+for i, p in enumerate(WORKERS):
+    sp = avg_seq / avgs_mp[p]
+    ax.plot(SIZES, sp.values, label=f'{p} Procesos',
+            marker='s', color=colors_mp[i], linewidth=2, linestyle='--')
+
+ax.set_xlabel('Dimensión de la matriz cuadrada (N×N)', fontsize=12)
+ax.set_ylabel('Speedup', fontsize=12)
+ax.set_title('Speedup — Multiprocesamiento (2, 4, 8, 16 procesos)', fontsize=13)
+ax.legend(fontsize=10)
+ax.grid(True, alpha=0.4)
+fig.tight_layout()
+fig.savefig(f'{OUT_DIR}/speedup_procesos.png', dpi=150)
+plt.close()
+
+# ── Plot 9: 6 curvas — mejores variantes ──────────────────────────────────────
+# Determine 2 best threads and 2 best processes by average speedup
+sp_threads = {p: (avg_seq / avgs_threads[p]).mean() for p in WORKERS}
+sp_mp      = {p: (avg_seq / avgs_mp[p]).mean()      for p in WORKERS}
+best_threads = sorted(sp_threads, key=sp_threads.get, reverse=True)[:2]
+best_mp      = sorted(sp_mp,      key=sp_mp.get,      reverse=True)[:2]
+
+fig, ax = plt.subplots(figsize=(11, 6))
+
+ax.plot(SIZES, (avg_seq / avg_flags).values, label='Secuencial (-O2)',
+        marker='D', linewidth=2, color='darkorange', linestyle='--')
+ax.plot(SIZES, (avg_seq / avg_mem).values,   label='Memoria (transp.)',
+        marker='^', linewidth=2, color='seagreen',   linestyle='-.')
+
+colors_t2  = ['#1565C0', '#42A5F5']
+colors_mp2 = ['#E65100', '#FF8A65']
+
+for i, p in enumerate(sorted(best_threads)):
+    ax.plot(SIZES, (avg_seq / avgs_threads[p]).values,
+            label=f'Hilos {p}', marker='o', color=colors_t2[i], linewidth=2)
+
+for i, p in enumerate(sorted(best_mp)):
+    ax.plot(SIZES, (avg_seq / avgs_mp[p]).values,
+            label=f'Procesos {p}', marker='s', color=colors_mp2[i],
+            linewidth=2, linestyle=':')
+
+ax.set_xlabel('Dimensión de la matriz cuadrada (N×N)', fontsize=12)
+ax.set_ylabel('Speedup', fontsize=12)
+ax.set_title('Speedup — 6 mejores variantes', fontsize=13)
+ax.legend(fontsize=10)
+ax.grid(True, alpha=0.4)
+fig.tight_layout()
+fig.savefig(f'{OUT_DIR}/speedup_6curvas.png', dpi=150)
+plt.close()
+
+print(f"9 gráficas generadas en '{OUT_DIR}/'")
