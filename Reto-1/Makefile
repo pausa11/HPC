@@ -10,19 +10,19 @@ $(OUT):
 	mkdir -p $(OUT)
 
 $(OUT)/secuential: $(SRC)/JacobiSecuential.c | $(OUT)
-	$(CC) -Wall -lm -O0 -o $@ $<
+	$(CC) -Wall -O0 -o $@ $< -lm
 
 $(OUT)/secuentialFlags: $(SRC)/JacobiSecuentialFlags.c | $(OUT)
-	$(CC) $(CFLAGS) -Wall -lm -o $@ $<
+	$(CC) $(CFLAGS) -Wall -o $@ $< -lm
 
 $(OUT)/memory: $(SRC)/JacobiMemory.c | $(OUT)
-	$(CC) -Wall -lm -O0 -o $@ $<
+	$(CC) -Wall -O0 -o $@ $< -lm
 
 $(OUT)/threads: $(SRC)/JacobiThreads.c | $(OUT)
-	$(CC) -Wall -lpthread -lm -O0 -o $@ $<
+	$(CC) -Wall -O0 -o $@ $< -lpthread -lm
 
 $(OUT)/multiprocessing: $(SRC)/JacobiMultiprocessing.c | $(OUT)
-	$(CC) -Wall -lm -O0 -o $@ $<
+	$(CC) -Wall -O0 -o $@ $< -lm
 
 clean:
 	rm -rf $(OUT)
