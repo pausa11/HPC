@@ -22,7 +22,7 @@ fi
 mkdir -p "$ROOT_DIR/output"
 mkdir -p "$STATS_DIR"
 
-k=(1 2 3 4 5 5 6 7 8 9 10 11 12 13 14 15) # The objective is to run in (1 2 3 4 5 6 7 8 9 10 11 12 13)
+k=(1 2 3 4 5 6 7 8 9 10 11) # Range matches PDF convergence study (Burkardt, Section 11)
 
 num_proccesses=(2 4 8 16)
 
