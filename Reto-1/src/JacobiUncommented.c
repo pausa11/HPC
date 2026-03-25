@@ -119,22 +119,17 @@ int jacobi(double *u, double *f, int N, double h, double tol, int max_iter)
             change_sq += (u[j] - u_old[j]) * (u[j] - u_old[j]);
 
         it++;
-
+        
         printf("  %8d  %14.6e  %14.6e\n",
                it, rms, sqrt(change_sq / (double)N));
 
         /* ── Check convergence ── */
-        if (it >= max_iter)
+        if (rms <= tol)
         {
-            fprintf(stderr, "WARNING: reached max_iter = %d without converging.\n", max_iter);
+           printf("\n  Converged after %d iterations (RMS = %.4e <= tol = %.4e)\n", it, rms, tol);
             break;
         }
 
-        if (rms <= tol)
-        {
-            printf("\n  Converged after %d iterations (RMS = %.4e <= tol = %.4e)\n", it, rms, tol);
-            break;
-        }
     }
 
     free(u_old);
@@ -156,6 +151,8 @@ int main(int argc, char *argv[])
     struct timespec start, end;
     clock_gettime(CLOCK_MONOTONIC, &start);
 
+    int k = atoi(argv[1]);
+  
     if (argc < 2)
     {
         fprintf(stderr, "Usage: %s <k>\n", argv[0]);
@@ -164,7 +161,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    int k = atoi(argv[1]);
+    k = atoi(argv[1]);
     if (k < 0)
     {
         fprintf(stderr, "ERROR: k must be >= 0.\n");
@@ -251,7 +248,15 @@ int main(int argc, char *argv[])
     printf("  RMS residual tol  = %g\n",   tol);
     
 
-    /* ── Run the Jacobi iteration ── */
+    /* ── Print summary statistics ── */
+    double rms_jacobi_vs_exact  = 0.0;
+    for (j = 0; j < N; j++)
+    {
+        rms_jacobi_vs_exact  += (u[j]  - ue[j]) * (u[j]  - ue[j]);
+    }
+    rms_jacobi_vs_exact  = sqrt(rms_jacobi_vs_exact  / (double)N);
+  
+  /* ── Run the Jacobi iteration ── */
     int it_num = jacobi(u, f, N, h, tol, max_iter);
 
     

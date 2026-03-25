@@ -4,63 +4,6 @@
 #include <math.h>
 #include <pthread.h>
 
-/* =========================================================================
- * PORTABLE BARRIER
- * macOS does not implement pthread_barrier_t (optional POSIX extension).
- * This is a simple replacement using mutex + condvar + generation counter.
- * The last thread to arrive broadcasts and returns BARRIER_SERIAL_THREAD (1);
- * all other threads return 0 — identical semantics to POSIX barriers.
- * ========================================================================= */
-
-#define BARRIER_SERIAL_THREAD 1
-
-typedef struct {
-    pthread_mutex_t mutex;
-    pthread_cond_t  cond;
-    int             count;       /* threads arrived so far         */
-    int             total;       /* threads needed to release      */
-    int             generation;  /* flips each time barrier trips  */
-} barrier_t;
-
-static int barrier_init(barrier_t *b, int total)
-{
-    b->count      = 0;
-    b->total      = total;
-    b->generation = 0;
-    pthread_mutex_init(&b->mutex, NULL);
-    pthread_cond_init(&b->cond,   NULL);
-    return 0;
-}
-
-static int barrier_wait(barrier_t *b)
-{
-    pthread_mutex_lock(&b->mutex);
-    b->count++;
-    if (b->count == b->total)
-    {
-        b->generation++;
-        b->count = 0;
-        pthread_cond_broadcast(&b->cond);
-        pthread_mutex_unlock(&b->mutex);
-        return BARRIER_SERIAL_THREAD;
-    }
-    else
-    {
-        int gen = b->generation;
-        while (gen == b->generation)
-            pthread_cond_wait(&b->cond, &b->mutex);
-        pthread_mutex_unlock(&b->mutex);
-        return 0;
-    }
-}
-
-static int barrier_destroy(barrier_t *b)
-{
-    pthread_mutex_destroy(&b->mutex);
-    pthread_cond_destroy(&b->cond);
-    return 0;
-}
-
 /*
  * exact(): Evaluates the exact solution u(x) = x*(x-1)*exp(x) of the continuous
  */
@@ -153,10 +96,10 @@ typedef struct
      *   barrier_sweep    — all sweeps done before residual begins
      *   barrier_residual — all partial sums written; serial thread reduces
      *   barrier_check    — converged flag written before any thread re-loops */
-    barrier_t barrier_copy;
-    barrier_t barrier_sweep;
-    barrier_t barrier_residual;
-    barrier_t barrier_check;
+    pthread_barrier_t barrier_copy;
+    pthread_barrier_t barrier_sweep;
+    pthread_barrier_t barrier_residual;
+    pthread_barrier_t barrier_check;
 } SharedData;
 
 /* =========================================================================
@@ -209,7 +152,7 @@ void* jacobi_worker(void *arg)
         /* All threads must finish copying before any begins the sweep.
          * Without this barrier a thread could read a neighbour's u_old[j]
          * that the neighbour has not yet copied, producing wrong results. */
-        barrier_wait(&s->barrier_copy);
+        pthread_barrier_wait(&s->barrier_copy);
 
         /* ── Jacobi sweep: update every interior node ── */
         for (j = t->start_j; j < t->end_j; j++)
@@ -231,7 +174,7 @@ void* jacobi_worker(void *arg)
         /* All threads must finish the sweep before any begins the residual.
          * Without this barrier a thread could read a neighbour's u[j] that
          * the neighbour has not yet updated, corrupting the residual. */
-        barrier_wait(&s->barrier_sweep);
+        pthread_barrier_wait(&s->barrier_sweep);
 
         /* ── Compute RMS residual with the new iterate ──
          *
@@ -255,13 +198,13 @@ void* jacobi_worker(void *arg)
             s->partial_sum_sq[t->thread_id] = sum_sq;
         }
 
-        /* barrier_wait returns BARRIER_SERIAL_THREAD for
+        /* pthread_barrier_wait returns PTHREAD_BARRIER_SERIAL_THREAD for
          * exactly one thread. That designated thread performs the global
          * reduction, increments the iteration counter, and sets the
          * convergence flag. All other threads return 0 and proceed directly
          * to barrier_check where they will wait for the flag to be written. */
-        int rc = barrier_wait(&s->barrier_residual);
-        if (rc == BARRIER_SERIAL_THREAD)
+        int rc = pthread_barrier_wait(&s->barrier_residual);
+        if (rc == PTHREAD_BARRIER_SERIAL_THREAD)
         {
             /* Sum the boundary residual contributions (always zero here since
              * u[0]=u[N-1]=0 and f[0]=f[N-1]=0, but kept for correctness with
@@ -285,12 +228,8 @@ void* jacobi_worker(void *arg)
             s->it++;
 
             /* ── Check convergence ── */
-            if (s->it >= s->max_iter)
-            {
-                fprintf(stderr, "WARNING: reached max_iter = %d without converging.\n", s->max_iter);
-                s->converged = 1;
-            }
-            else if (s->rms <= s->tol)
+
+          if (s->rms <= s->tol)
             {
                 //printf("\n  Converged after %d iterations (RMS = %.4e <= tol = %.4e)\n",
                   //     s->it, s->rms, s->tol);
@@ -301,7 +240,7 @@ void* jacobi_worker(void *arg)
 
         /* All threads wait here until the serial thread has finished writing
          * s->converged. Only after this barrier is it safe to read it. */
-        barrier_wait(&s->barrier_check);
+        pthread_barrier_wait(&s->barrier_check);
 
         if (s->converged) break;
     }
@@ -385,10 +324,10 @@ int jacobi(double *u, double *f, int N, double h, double tol, int max_iter,
 
     /* Initialise all four barriers; each requires exactly num_threads
      * participants to release — one arrival per worker thread per phase. */
-    barrier_init(&shared.barrier_copy,     num_threads);
-    barrier_init(&shared.barrier_sweep,    num_threads);
-    barrier_init(&shared.barrier_residual, num_threads);
-    barrier_init(&shared.barrier_check,    num_threads);
+    pthread_barrier_init(&shared.barrier_copy,     NULL, num_threads);
+    pthread_barrier_init(&shared.barrier_sweep,    NULL, num_threads);
+    pthread_barrier_init(&shared.barrier_residual, NULL, num_threads);
+    pthread_barrier_init(&shared.barrier_check,    NULL, num_threads);
 
     /* ── Distribute interior nodes among threads ──
      * Interior nodes run from j=1 to j=N-2 (total: N-2 nodes).
@@ -422,10 +361,10 @@ int jacobi(double *u, double *f, int N, double h, double tol, int max_iter,
         pthread_join(threads[t], NULL);
 
     /* Destroy barriers and free all heap-allocated thread structures */
-    barrier_destroy(&shared.barrier_copy);
-    barrier_destroy(&shared.barrier_sweep);
-    barrier_destroy(&shared.barrier_residual);
-    barrier_destroy(&shared.barrier_check);
+    pthread_barrier_destroy(&shared.barrier_copy);
+    pthread_barrier_destroy(&shared.barrier_sweep);
+    pthread_barrier_destroy(&shared.barrier_residual);
+    pthread_barrier_destroy(&shared.barrier_check);
 
     free(shared.partial_sum_sq);
     free(threads);
@@ -449,16 +388,18 @@ int main(int argc, char *argv[])
     struct timespec start, end; /* Wall-clock snapshots */
     clock_gettime(CLOCK_MONOTONIC, &start);
 
-    if (argc < 3)
-    {
-        fprintf(stderr, "Usage: %s <k> <num_threads>\n", argv[0]);
-        fprintf(stderr, "  k = grid index, N = 2^k + 1 nodes.\n");
-        fprintf(stderr, "  Example: %s 8 4\n", argv[0]);
-        return 1;
-    }
-
     int k           = atoi(argv[1]);
     int num_threads = atoi(argv[2]); /* number of worker threads */
+  
+  /* if (argc < 2)
+    {
+        fprintf(stderr, "Usage: %s <k>\n", argv[0]);
+        fprintf(stderr, "  k = grid index, N = 2^k + 1 nodes.\n");
+        fprintf(stderr, "  Example: %s 5   (reproduces PDF sample with N=33)\n", argv[0]);
+        return 1;
+    }*/ 
+
+    k = atoi(argv[1]);
     if (k < 0)
     {
         fprintf(stderr, "ERROR: k must be >= 0.\n");
@@ -545,7 +486,15 @@ int main(int argc, char *argv[])
     printf("  RMS residual tol  = %g\n",   tol);
     */
 
-    /* ── Run the Jacobi iteration ── */
+    /* ── Print summary statistics ── */
+    double rms_jacobi_vs_exact  = 0.0;
+    for (j = 0; j < N; j++)
+    {
+        rms_jacobi_vs_exact  += (u[j]  - ue[j]) * (u[j]  - ue[j]);
+    }
+    rms_jacobi_vs_exact  = sqrt(rms_jacobi_vs_exact  / (double)N);
+  
+  /* ── Run the Jacobi iteration ── */
     int it_num = jacobi(u, f, N, h, tol, max_iter, num_threads);
 
     /*

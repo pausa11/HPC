@@ -135,7 +135,7 @@ int jacobi(double *u, double *f, int N, double h, double tol, int max_iter)
     */ 
 
     it  = 0;
-    rms = 0.0;
+    rms = compute_rms_residual(u_cur, f, N, h); /* residual of initial guess */
 
     while (1)
     {
@@ -205,18 +205,14 @@ int jacobi(double *u, double *f, int N, double h, double tol, int max_iter)
         it++;
 
         /* ── Check convergence ── */
-        if (it >= max_iter)
-        {
-            fprintf(stderr, "WARNING: reached max_iter = %d without converging.\n", max_iter);
-            break;
-        }
-
-        if (rms <= tol)
+        
+      if (rms <= tol)
         {
             //printf("\n  Converged after %d iterations (RMS = %.4e <= tol = %.4e)\n",
               //     it, rms, tol);
             break;
         }
+      
     }
 
     /*
@@ -252,15 +248,17 @@ int main(int argc, char *argv[])
     struct timespec start, end;
     clock_gettime(CLOCK_MONOTONIC, &start);
 
-    if (argc < 2)
+    int k = atoi(argv[1]);
+  
+  /* if (argc < 2)
     {
         fprintf(stderr, "Usage: %s <k>\n", argv[0]);
         fprintf(stderr, "  k = grid index, N = 2^k + 1 nodes.\n");
         fprintf(stderr, "  Example: %s 5   (reproduces PDF sample with N=33)\n", argv[0]);
         return 1;
-    }
+    }*/ 
 
-    int k = atoi(argv[1]);
+    k = atoi(argv[1]);
     if (k < 0)
     {
         fprintf(stderr, "ERROR: k must be >= 0.\n");
@@ -347,7 +345,15 @@ int main(int argc, char *argv[])
     printf("  RMS residual tol  = %g\n",   tol);
     */
 
-    /* ── Run the Jacobi iteration ── */
+    /* ── Print summary statistics ── */
+    double rms_jacobi_vs_exact  = 0.0;
+    for (j = 0; j < N; j++)
+    {
+        rms_jacobi_vs_exact  += (u[j]  - ue[j]) * (u[j]  - ue[j]);
+    }
+    rms_jacobi_vs_exact  = sqrt(rms_jacobi_vs_exact  / (double)N);
+  
+  /* ── Run the Jacobi iteration ── */
     int it_num = jacobi(u, f, N, h, tol, max_iter);
 
     /*

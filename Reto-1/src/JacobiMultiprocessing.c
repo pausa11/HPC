@@ -288,16 +288,18 @@ int main(int argc, char *argv[])
     struct timespec start, end; /* Wall-clock snapshots */
     clock_gettime(CLOCK_MONOTONIC, &start);
 
-    if (argc < 3)
-    {
-        fprintf(stderr, "Usage: %s <k> <num_procs>\n", argv[0]);
-        fprintf(stderr, "  k = grid index, N = 2^k + 1 nodes.\n");
-        fprintf(stderr, "  Example: %s 8 4\n", argv[0]);
-        return 1;
-    }
-
     int k           = atoi(argv[1]);
     int num_procs   = atoi(argv[2]); /* number of child processes */
+  
+  /* if (argc < 2)
+    {
+        fprintf(stderr, "Usage: %s <k>\n", argv[0]);
+        fprintf(stderr, "  k = grid index, N = 2^k + 1 nodes.\n");
+        fprintf(stderr, "  Example: %s 5   (reproduces PDF sample with N=33)\n", argv[0]);
+        return 1;
+    }*/ 
+
+    k = atoi(argv[1]);
     if (k < 0)
     {
         fprintf(stderr, "ERROR: k must be >= 0.\n");
@@ -384,7 +386,15 @@ int main(int argc, char *argv[])
     printf("  RMS residual tol  = %g\n",   tol);
     */
 
-    /* ── Run the Jacobi iteration ── */
+    /* ── Print summary statistics ── */
+    double rms_jacobi_vs_exact  = 0.0;
+    for (j = 0; j < N; j++)
+    {
+        rms_jacobi_vs_exact  += (u[j]  - ue[j]) * (u[j]  - ue[j]);
+    }
+    rms_jacobi_vs_exact  = sqrt(rms_jacobi_vs_exact  / (double)N);
+  
+  /* ── Run the Jacobi iteration ── */
     int it_num = jacobi(u, f, N, h, tol, max_iter, num_procs);
 
     /*
