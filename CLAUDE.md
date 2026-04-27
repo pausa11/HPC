@@ -1,74 +1,75 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Purpose: onboard the coding agent quickly so it can make correct changes in this HPC repo.
 
-## Repository Structure
+## WHY
 
-This repo contains two HPC case studies, each comparing sequential, memory-optimized, threaded, and multiprocessing C implementations of a computational problem:
+This repository compares implementation strategies for three HPC problems and measures CPU time:
 
-- **`caso-estudio-1/`** — Matrix multiplication benchmark (see its own `CLAUDE.md` for details)
-- **`Reto-1/`** — Jacobi iterative solver for a 1D boundary value problem
+- `caso-estudio-1/`: matrix multiplication benchmark.
+- `caso-estudio-2/`: additional case study (see `docs/enunciado.md` for scope).
+- `Reto-1/`: 1D Jacobi solver benchmark.
 
-## Build and Run
+Primary goal in most tasks: preserve correctness while improving or analyzing performance.
 
-Both projects follow the same pattern:
+## WHAT
+
+Top-level projects:
+
+- `caso-estudio-1/`
+- `caso-estudio-2/`
+- `Reto-1/`
+
+Each project typically contains:
+
+- `src/`: C implementations (`secuential`, `secuentialFlags`, `memory`, `threads`, `multiprocessing`).
+- `Makefile`: builds binaries into `output/`.
+- `scripts/`: benchmark automation.
+- `stats/`: CSV outputs from benchmark runs.
+- `docs/`: reports, analysis, and helper scripts.
+
+Common behavior across binaries: print only execution time in seconds to stdout.
+
+## HOW (DEFAULT WORKFLOW)
+
+When editing code:
+
+1. Enter the relevant project folder (`caso-estudio-1/`, `caso-estudio-2/`, or `Reto-1/`).
+2. Build with `make`.
+3. Run only the variant(s) affected by the change.
+4. If behavior or performance tooling changed, run the corresponding benchmark script.
+
+Useful commands:
 
 ```bash
-cd caso-estudio-1   # or Reto-1
-make                # Compiles all variants into output/
-make clean          # Removes output/
+make
+make clean
+./output/secuential <args>
+./output/memory <args>
+./output/threads <args>
+./output/multiprocessing <args>
 ```
 
-**Caso-estudio-1** (matrix size × matrix size, or matrix size × num_workers):
-```bash
-./output/secuential 1000 1000
-./output/threads 1000 4
-./output/multiprocessing 1000 8
-```
-
-**Reto-1** (grid parameter `k`, where N = 2^k + 1 interior nodes):
-```bash
-./output/secuential 8
-./output/threads 8 4      # k=8, 4 threads
-./output/multiprocessing 8
-```
-
-All binaries print a single float (CPU time in seconds, 6 decimal places) to stdout.
-
-## Benchmark Automation
-
-Both projects have `scripts/RunAll.sh` which runs all variants across a range of input sizes, saves CSV results to `stats/<hostname>/<timestamp>/`, and supports checkpoint-based resume on interruption.
+Benchmark automation:
 
 ```bash
-chmod +x scripts/RunAll.sh
 ./scripts/RunAll.sh
 ```
 
-## Architecture
+## PROGRESSIVE DISCLOSURE (READ ON DEMAND)
 
-### Common Pattern
+Read only what is relevant to the current task:
 
-Every implementation allocates data, fills it with random values, solves the problem, measures CPU time via `getrusage(RUSAGE_SELF)` (plus `RUSAGE_CHILDREN` in multiprocessing variants), prints the result, and frees memory.
+- `caso-estudio-1/CLAUDE.md`: project-specific details for matrix multiplication.
+- `caso-estudio-2/docs/enunciado.md`: problem statement and scope for the new case study.
+- `Reto-1/docs/md/How2Run.md`: execution and usage details for Jacobi variants.
+- `Reto-1/docs/md/Memory.md`: memory-optimized Jacobi strategy notes.
+- `Reto-1/docs/md/Threads.md`: threading behavior and limitations in Jacobi case.
 
-### Parallelization Strategies (same across both projects)
+If a task needs deeper context, inspect source files in `src/` and the latest CSVs in `stats/` for the target project.
 
-| Binary | Strategy |
-|--------|----------|
-| `secuential` | Naive, compiled without `-O2` |
-| `secuentialFlags` | Same source, compiled with `-O2` |
-| `memory` | Cache-optimized access pattern |
-| `threads` | POSIX threads (`-pthread`), work divided by rows/segments |
-| `multiprocessing` | `fork()` + `mmap(MAP_SHARED\|MAP_ANONYMOUS)` for shared result; A/B copied via copy-on-write |
+## GUARDRAILS
 
-### Reto-1 Specific Details
-
-- **Problem**: Solves u''(x) = -x(x+3)eˣ with u(0)=0, u(1)=0 using Jacobi iteration
-- **Convergence**: Iterates until RMS residual < tolerance (~10⁻⁵), checking every 50 iterations in the memory-optimized variant
-- **`JacobiMemory.c`** applies four optimizations: fused sweep+residual loop, pointer swapping instead of array copy, infrequent residual checks, reduced memory traffic
-- **`JacobiThreads.c`** uses `pthread_barrier_t` for synchronization between iterations — threading hurts performance here due to barrier overhead and too little work per thread for small 1D grids (documented in `docs/Threads.md`)
-- **`JacobiMultiprocessing.c`** uses shared memory only for the result vector; boundary exchange between processes happens via the shared array
-
-### Compiler Flags
-
-- Casos-estudio-1: threads binary uses `-pthread`; no `-lm` needed
-- Reto-1: all variants use `-Wall -lm`; `secuential` uses `-O0`, `secuentialFlags` uses `-O2`, others use `-O0`
+- Keep changes minimal and consistent with the existing C style in each project.
+- Do not change CLI arguments or stdout format unless explicitly requested.
+- Prefer deterministic verification (build + targeted run) over broad, expensive runs.
