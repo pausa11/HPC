@@ -1,0 +1,9 @@
+test,metric,value,unit
+cpu_1threads,events_per_second,554.00,events/s
+cpu_1threads,latency_avg,1.80,ms
+cpu_1threads,latency_p95,1.93,ms
+cpu_8threads,events_per_second,3281.54,events/s
+cpu_8threads,latency_avg,2.44,ms
+cpu_8threads,latency_p95,2.43,ms
+memory_write,throughput,81563.37,MiB/s
+memory_read,throughput,119419.11,MiB/s
