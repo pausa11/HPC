@@ -12,7 +12,7 @@ static void init_road(int *road, int n, double density, unsigned int *seed)
 
     for (i = 0; i < n; i++) {
         r = (double)rand_r(seed) / ((double)RAND_MAX + 1.0);
-        road[i] = (r < density) ? 1 : 0;
+        road[i] = (r < density) ? 1 : 0;k
     }
 }
 
