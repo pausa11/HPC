@@ -1,0 +1,1 @@
+aws cloudformation describe-stack-events --stack-name hpc-mpi-cluster --query "StackEvents[?ResourceStatus=='CREATE_FAILED'].[LogicalResourceId,ResourceStatusReason]" --output table

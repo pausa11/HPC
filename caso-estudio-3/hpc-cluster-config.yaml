@@ -1,0 +1,30 @@
+Region: us-east-1
+Image:
+  Os: alinux2
+
+HeadNode:
+  InstanceType: t3.micro
+  Networking:
+    SubnetId: subnet-0bd01cb1a60e9790a
+  Ssh:
+    KeyName: hpc-mpi-key
+
+Scheduling:
+  Scheduler: slurm
+  SlurmQueues:
+    - Name: compute
+      ComputeResources:
+        - Name: c5xlarge
+          InstanceType: c7i-flex.large
+          MinCount: 3             # Nodos siempre activos (requisito enunciado)
+          MaxCount: 4
+      Networking:
+        SubnetIds:
+          - subnet-0bd01cb1a60e9790a
+
+SharedStorage:
+  - MountDir: /shared
+    Name: nfs-shared
+    StorageType: Efs
+    EfsSettings:
+      Encrypted: false
