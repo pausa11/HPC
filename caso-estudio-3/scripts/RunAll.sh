@@ -22,13 +22,11 @@ fi
 mkdir -p "$ROOT_DIR/output"
 mkdir -p "$STATS_DIR"
 
-# Hostfile con los nodos compute (3 nodos × 2 vCPUs = 6 slots máx)
-HOSTFILE="${MPI_HOSTFILE:-/shared/hostfile}"
-
 sizes=(500 1000 1300 1600 2000 2300 2600 3000 3300 3600 4000)
 num_proccesses=(2 4 6)
 
 POINT_TO_POINT_FILE="$STATS_DIR/point_to_point_"
+SECUENTIAL_FILE="$STATS_DIR/secuential.csv"
 CHECKPOINT_FILE="$STATS_DIR/checkpoint.log"
 
 # Helper: check if a combination was already completed successfully
@@ -77,11 +75,22 @@ for n in "${num_proccesses[@]}"; do
       key="point_to_point,${i},n${n},run${j}"
       # OPT: Wrapped with mpirun -n "$n" so the MPI binary runs in parallel
       run_safe "$key" "${POINT_TO_POINT_FILE}${num_proccesses[$COUNT]}.csv" \
-               mpirun --hostfile "$HOSTFILE" -n "$n" "$ROOT_DIR/output/point_to_point" "$i" "$n"
+               mpirun -n "$n" "$ROOT_DIR/output/point_to_point" "$i" "$n"
     done
     echo "" >> "${POINT_TO_POINT_FILE}${num_proccesses[$COUNT]}.csv"
   done
   ((COUNT++))
+done
+
+# ─── SECUENTIAL ──────────────────────────────────────────────────────────────
+echo "Secuential testing in process ..."
+
+for j in $(seq 1 10); do
+  for i in "${sizes[@]}"; do
+    key="secuential,${i},run${j}"
+    run_safe "$key" "$SECUENTIAL_FILE" "$ROOT_DIR/output/secuential" "$i"
+  done
+  echo "" >> "$SECUENTIAL_FILE"
 done
 
 # Mark this run as fully completed so it won't be resumed again
