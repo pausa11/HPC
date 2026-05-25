@@ -22,7 +22,7 @@ fi
 mkdir -p "$ROOT_DIR/output"
 mkdir -p "$STATS_DIR"
 
-sizes=(500 1000 1300 1600 2000 2300 2600 3000 3300 3600 4000)
+sizes=(504 1008 1296 1608 2004 2304 2604 3000 3300 3600 4008)
 num_proccesses=(2 4 6)
 
 POINT_TO_POINT_FILE="$STATS_DIR/point_to_point_"
@@ -75,7 +75,7 @@ for n in "${num_proccesses[@]}"; do
       key="point_to_point,${i},n${n},run${j}"
       # OPT: Wrapped with mpirun -n "$n" so the MPI binary runs in parallel
       run_safe "$key" "${POINT_TO_POINT_FILE}${num_proccesses[$COUNT]}.csv" \
-               mpirun -n "$n" "$ROOT_DIR/output/point_to_point" "$i" "$n"
+               mpirun --hostfile /shared/hostfile -n "$n" "$ROOT_DIR/output/point_to_point" "$i" "$n"
     done
     echo "" >> "${POINT_TO_POINT_FILE}${num_proccesses[$COUNT]}.csv"
   done
