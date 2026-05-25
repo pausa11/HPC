@@ -16,3 +16,7 @@ scp -i ~/.ssh/hpc-mpi-key.pem \
 ssh -i ~/.ssh/hpc-mpi-key.pem ec2-user@3.235.161.247
 
 salloc --nodes=4 --ntasks=8 --ntasks-per-node=2 --partition=compute
+
+scp -i ~/.ssh/hpc-mpi-key.pem -r ec2-user@3.235.161.247:/shared/caso-estudio-3/stats /Users/danieltorosoto/universidad/HPC/caso-estudio-3/stats/
+
+nohup bash RunAll.sh > runall.log 2>&1 &

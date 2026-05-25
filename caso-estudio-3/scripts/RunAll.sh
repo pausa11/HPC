@@ -83,35 +83,6 @@ for n in "${num_proccesses[@]}"; do
   ((COUNT++))
 done
 
-# ─── POINT TO POINT ─────────────────────────────────────────────────────────
-echo "Point to Point testing in process ..."
-
-COUNT=0
-for n in "${num_proccesses[@]}"; do
-  echo "Point to Point for $n testing in process ..."
-  for j in $(seq 1 10); do
-    for i in "${sizes[@]}"; do
-      key="point_to_point,${i},n${n},run${j}"
-      # OPT: Wrapped with mpirun -n "$n" so the MPI binary runs in parallel
-      run_safe "$key" "${POINT_TO_POINT_FILE}${num_proccesses[$COUNT]}.csv" \
-               mpirun --hostfile /shared/hostfile -n "$n" "$ROOT_DIR/output/point_to_point" "$i" "$n"
-    done
-    echo "" >> "${POINT_TO_POINT_FILE}${num_proccesses[$COUNT]}.csv"
-  done
-  ((COUNT++))
-done
-
-# ─── SECUENTIAL ──────────────────────────────────────────────────────────────
-echo "Secuential testing in process ..."
-
-for j in $(seq 1 10); do
-  for i in "${sizes[@]}"; do
-    key="secuential,${i},run${j}"
-    run_safe "$key" "$SECUENTIAL_FILE" "$ROOT_DIR/output/secuential" "$i"
-  done
-  echo "" >> "$SECUENTIAL_FILE"
-done
-
 # Mark this run as fully completed so it won't be resumed again
 mv "$STATS_DIR" "${STATS_DIR}.done"
 
