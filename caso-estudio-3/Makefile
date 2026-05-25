@@ -3,7 +3,7 @@ CC = gcc
 SRC = src
 OUT = output
 
-all: $(OUT)/point_to_point $(OUT)/secuential
+all: $(OUT)/point_to_point $(OUT)/secuential $(OUT)/collective
 
 $(OUT):
 	mkdir -p $(OUT)
@@ -12,6 +12,9 @@ $(OUT)/secuential: $(SRC)/SecuentialMatrixSolver.c | $(OUT)
 	$(CC) -o $@ $<
 
 $(OUT)/point_to_point: $(SRC)/PointToPoint.c | $(OUT)
+	$(MPI) -o $@ -O2 $<
+
+$(OUT)/collective: $(SRC)/CollectiveMatrixSolver.c | $(OUT)
 	$(MPI) -o $@ -O2 $<
 
 clean:

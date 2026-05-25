@@ -26,6 +26,7 @@ sizes=(500 1000 1300 1600 2000 2300 2600 3000 3300 3600 4000)
 num_proccesses=(2 4 6)
 
 POINT_TO_POINT_FILE="$STATS_DIR/point_to_point_"
+COLLECTIVE_FILE="$STATS_DIR/collective_"
 SECUENTIAL_FILE="$STATS_DIR/secuential.csv"
 CHECKPOINT_FILE="$STATS_DIR/checkpoint.log"
 
@@ -63,6 +64,24 @@ run_safe() {
     echo "  [WARN] $key fallo con codigo $exit_code (segfault u otro error), continuando..."
   fi
 }
+
+# ─── COLLECTIVE ─────────────────────────────────────────────────────────
+echo "Collective testing in process ..."
+
+COUNT=0
+for n in "${num_proccesses[@]}"; do
+  echo "Collective for $n testing in process ..."
+  for j in $(seq 1 10); do
+    for i in "${sizes[@]}"; do
+      key="collective,${i},n${n},run${j}"
+      # OPT: Wrapped with mpirun -n "$n" so the MPI binary runs in parallel
+      run_safe "$key" "${COLLECTIVE_FILE}${num_proccesses[$COUNT]}.csv" \
+               mpirun -n "$n" "$ROOT_DIR/output/collective" "$i" "$n"
+    done
+    echo "" >> "${COLLECTIVE_FILE}${num_proccesses[$COUNT]}.csv"
+  done
+  ((COUNT++))
+done
 
 # ─── POINT TO POINT ─────────────────────────────────────────────────────────
 echo "Point to Point testing in process ..."
